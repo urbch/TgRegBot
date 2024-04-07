@@ -2,14 +2,12 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardBut
 
 
 class ButtonText:
-    WHATS_NEXT = "Помощь"
-    BYE = "Bye-bye"
+    SUPPORT = "Помощь"
     REG = "Зарегистрироваться на игру"
     CHECK = "Проверить регистрацию"
 
 def get_on_start_kb():
-    button_help = KeyboardButton(text=ButtonText.WHATS_NEXT)
-    button_bye = KeyboardButton(text=ButtonText.BYE)
+    button_help = KeyboardButton(text=ButtonText.SUPPORT)
     button_reg = KeyboardButton(text=ButtonText.REG)
     button_check = KeyboardButton(text=ButtonText.CHECK)
     buttons_first_row = [button_reg]
