@@ -21,9 +21,3 @@ def get_on_start_kb():
     )
     return markup
 
-def get_on_help_keybard():
-    buttons_row = []
-    markup = ReplyKeyboardMarkup(
-        keyboard=[],
-    )
-    return markup
