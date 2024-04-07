@@ -1,13 +1,14 @@
 import logging
+import os
 
 from aiogram import Bot, Dispatcher
 from Routers import router as main_router
-
-import config
+from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=config.BOT_TOKEN)
+load_dotenv()
+bot = Bot(os.getenv('TOKEN'))
 dp = Dispatcher()
 dp.include_router(main_router)
 
