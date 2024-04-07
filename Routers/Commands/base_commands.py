@@ -42,6 +42,9 @@ async def handle_reg_button(message: Message):
         reply_markup=markup,
     )
 
+@router.message(F.text == ButtonText.CHECK)
+async def handle_check_button(message: Message):
+    await message.answer(text="Вы еще не зарегистрированы ни на одну игру")
 
 @router.message(F.text == ButtonText.SUPPORT)
 @router.message(Command("support", prefix="!/"))
