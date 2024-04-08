@@ -78,21 +78,16 @@ async def handle_team_name_invalid_type(message: types.Message):
     await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
 
 
-class IsNumber(BoundFilter):
-    async def check(self, message: types.Message) -> bool:
-        return message.text.isdigit()
-
-
-@router.message(Registration.team_size, F)
-async def handle_team_name(message: types.Message, state: FSMContext):
-        await state.update_data(team_name=message.text)
-        await state.clear()
-        await message.answer(text=f"Название вашей команды: {message.text}")
-
-
-@router.message(Registration.team_size)
-async def handle_team_name_invalid_type(message: types.Message):
-    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
+# @router.message(Registration.team_size)
+# async def handle_team_name(message: types.Message, state: FSMContext):
+#         await state.update_data(team_name=message.text)
+#         await state.clear()
+#         await message.answer(text=f"Название вашей команды: {message.text}")
+#
+#
+# @router.message(Registration.team_size)
+# async def handle_team_name_invalid_type(message: types.Message):
+#     await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
 
 
 @router.message(F.text == ButtonText.CHECK)
