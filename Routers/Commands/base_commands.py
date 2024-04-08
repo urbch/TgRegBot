@@ -71,6 +71,8 @@ async def handle_team_name(message: types.Message, state: FSMContext):
         await state.update_data(team_name=message.text)
         await state.clear()
         await message.answer(text=f"Название вашей команды: {message.text}")
+        await state.set_state(Registration.team_size)
+        await message.answer(text="Введите число участников команды:")
 
 
 @router.message(Registration.team_name)
@@ -78,16 +80,36 @@ async def handle_team_name_invalid_type(message: types.Message):
     await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
 
 
-# @router.message(Registration.team_size)
-# async def handle_team_name(message: types.Message, state: FSMContext):
-#         await state.update_data(team_name=message.text)
-#         await state.clear()
-#         await message.answer(text=f"Название вашей команды: {message.text}")
-#
-#
-# @router.message(Registration.team_size)
-# async def handle_team_name_invalid_type(message: types.Message):
-#     await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
+@router.message(Registration.team_size, F.text.isdigit())
+async def handle_team_name(message: types.Message, state: FSMContext):
+    number = int(message.text)
+    if number<=10 and number>0:
+        await state.update_data(team_size=message.text)
+        await state.clear()
+        await message.answer(text=f"Число участников: {message.text}")
+        await state.set_state(Registration.leader_name)
+        await message.answer(text="Введите имя капитана команды:")
+    else:
+        await message.answer(text="Число участников не должно превышать 10. Попробуйте еще раз: ")
+
+
+@router.message(Registration.team_size)
+async def handle_team_name_invalid_type(message: types.Message):
+    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
+
+
+@router.message(Registration.leader_name, F.text)
+async def handle_team_name(message: types.Message, state: FSMContext):
+        await state.update_data(team_name=message.text)
+        await state.clear()
+        await message.answer(text=f"Имя капитана команды: {message.text}")
+        await state.set_state(Registration.phone_number)
+        await message.answer(text="Введите контакный номер телефона:")
+
+
+@router.message(Registration.leader_name)
+async def handle_team_name_invalid_type(message: types.Message):
+    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
 
 
 @router.message(F.text == ButtonText.CHECK)
