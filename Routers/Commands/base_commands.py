@@ -1,9 +1,12 @@
-from aiogram import Router, F
+from aiogram import Router, F, types
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, CallbackQuery
 from aiogram.utils import markdown
 
+from Routers.Commands.reg_handler import reg_button, send_user_info
 from keyboards.start_keyboard import ButtonText, get_on_start_kb
 
 router = Router(name=__name__)
@@ -17,6 +20,12 @@ async def process_start(message: Message):
         reply_markup=get_on_start_kb()
     )
 
+@router.message(F.text == ButtonText.REG)
+async def handle_reg_button(message: Message):
+    await message.answer(
+        text="Выберите подохдящую дату: ",
+        reply_markup=reg_button()
+    )
 
 @router.message(Command("help"))
 async def process_help(message: Message):
@@ -24,27 +33,10 @@ async def process_help(message: Message):
     await message.answer(text=text)
 
 
-@router.message(F.text == ButtonText.REG)
-async def handle_reg_button(message: Message):
-    date1 = InlineKeyboardButton(text="1",
-                                 url="https://ru.freepik.com/free-photo/kitty-with-monochrome-wall-behind-her_13863370.htm#query=%D0%BA%D0%BE%D1%82&position=0&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
-    date2 = InlineKeyboardButton(text="2",
-                                 url="https://ru.freepik.com/free-photo/adorable-looking-kitten-with-yarn_72412955.htm#query=%D0%BA%D0%BE%D1%82&position=1&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
-    date3 = InlineKeyboardButton(text="3",
-                                 url="https://ru.freepik.com/free-photo/closeup-vertical-shot-of-a-cute-european-shorthair-cat_13828199.htm#query=%D0%BA%D0%BE%D1%82&position=2&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
-    row1 = [date1]
-    row2 = [date2]
-    row3 = [date3]
-    rows = [row1, row2, row3]
-    markup = InlineKeyboardMarkup(inline_keyboard=rows)
-    await message.answer(
-        text="Выберите подохдящую дату: ",
-        reply_markup=markup,
-    )
-
 @router.message(F.text == ButtonText.CHECK)
-async def handle_check_button(message: Message):
-    await message.answer(text="Вы еще не зарегистрированы ни на одну игру")
+async def handle_check_button(message: Message, state: FSMContext):
+    await message.answer(text=await send_user_info(state))
+
 
 @router.message(F.text == ButtonText.SUPPORT)
 @router.message(Command("support", prefix="!/"))
