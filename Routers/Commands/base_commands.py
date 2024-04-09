@@ -1,23 +1,12 @@
-from aiogram import Router, F, types
+from aiogram import Router, F
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton
-from aiogram.types import ReplyKeyboardMarkup, CallbackQuery
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils import markdown
 
 from keyboards.start_keyboard import ButtonText, get_on_start_kb
 
 router = Router(name=__name__)
-
-
-class Registration(StatesGroup):
-    date_selection = State()
-    team_name = State()
-    team_size = State()
-    leader_name = State()
-    phone_number = State()
 
 
 @router.message(CommandStart())
@@ -37,9 +26,12 @@ async def process_help(message: Message):
 
 @router.message(F.text == ButtonText.REG)
 async def handle_reg_button(message: Message):
-    date1 = InlineKeyboardButton(text="02.02.24", callback_data="date02.02.24")
-    date2 = InlineKeyboardButton(text="03.03.24", callback_data="date03.03.24")
-    date3 = InlineKeyboardButton(text="04.04.24", callback_data="date04.04.24")
+    date1 = InlineKeyboardButton(text="1",
+                                 url="https://ru.freepik.com/free-photo/kitty-with-monochrome-wall-behind-her_13863370.htm#query=%D0%BA%D0%BE%D1%82&position=0&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
+    date2 = InlineKeyboardButton(text="2",
+                                 url="https://ru.freepik.com/free-photo/adorable-looking-kitten-with-yarn_72412955.htm#query=%D0%BA%D0%BE%D1%82&position=1&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
+    date3 = InlineKeyboardButton(text="3",
+                                 url="https://ru.freepik.com/free-photo/closeup-vertical-shot-of-a-cute-european-shorthair-cat_13828199.htm#query=%D0%BA%D0%BE%D1%82&position=2&from_view=keyword&track=ais&uuid=48b7a3b0-7cb5-49d4-9211-b13e75adc8e6")
     row1 = [date1]
     row2 = [date2]
     row3 = [date3]
@@ -50,72 +42,9 @@ async def handle_reg_button(message: Message):
         reply_markup=markup,
     )
 
-
-@router.callback_query(lambda call: call.data.startswith("date"))
-
-
-async def handle_date_callback(call: CallbackQuery, state: FSMContext):
-    selected_date = call.data.split("date")[1]
-    try:
-        await call.answer(text=f"Вы выбрали дату: {selected_date}")
-        await call.message.edit_text(text=f"Вы выбрали дату: {selected_date}", reply_markup=None)
-        await state.update_data(selected_date=selected_date)
-        await state.set_state(Registration.team_name)
-        await call.message.answer(text="Введите название вашей команды:")
-    except Exception as e:
-        await call.answer(text="Ошибка обработки даты")
-
-
-@router.message(Registration.team_name, F.text)
-async def handle_team_name(message: types.Message, state: FSMContext):
-        await state.update_data(team_name=message.text)
-        await state.clear()
-        await message.answer(text=f"Название вашей команды: {message.text}")
-        await state.set_state(Registration.team_size)
-        await message.answer(text="Введите число участников команды:")
-
-
-@router.message(Registration.team_name)
-async def handle_team_name_invalid_type(message: types.Message):
-    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
-
-
-@router.message(Registration.team_size, F.text.isdigit())
-async def handle_team_name(message: types.Message, state: FSMContext):
-    number = int(message.text)
-    if number<=10 and number>0:
-        await state.update_data(team_size=message.text)
-        await state.clear()
-        await message.answer(text=f"Число участников: {message.text}")
-        await state.set_state(Registration.leader_name)
-        await message.answer(text="Введите имя капитана команды:")
-    else:
-        await message.answer(text="Число участников не должно превышать 10. Попробуйте еще раз: ")
-
-
-@router.message(Registration.team_size)
-async def handle_team_name_invalid_type(message: types.Message):
-    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
-
-
-@router.message(Registration.leader_name, F.text)
-async def handle_team_name(message: types.Message, state: FSMContext):
-        await state.update_data(team_name=message.text)
-        await state.clear()
-        await message.answer(text=f"Имя капитана команды: {message.text}")
-        await state.set_state(Registration.phone_number)
-        await message.answer(text="Введите контакный номер телефона:")
-
-
-@router.message(Registration.leader_name)
-async def handle_team_name_invalid_type(message: types.Message):
-    await message.answer(text="Неверный тип данных. Попробуйте еще раз: ")
-
-
 @router.message(F.text == ButtonText.CHECK)
 async def handle_check_button(message: Message):
     await message.answer(text="Вы еще не зарегистрированы ни на одну игру")
-
 
 @router.message(F.text == ButtonText.SUPPORT)
 @router.message(Command("support", prefix="!/"))
