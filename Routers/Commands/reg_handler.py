@@ -113,8 +113,11 @@ async def handle_phone_number(message: types.Message, state: FSMContext):
     await state.update_data(phone_number=message.text)
     #await message.answer(text=f"Ваш контактный номер телефона: {message.text}")
     await state.set_state(TeamInfo.report)
-    await message.answer(text=await send_user_info(state))
-    await state.clear()
+    yes_button = InlineKeyboardButton(text="Да", callback_data="confirm_yes")
+    no_button = InlineKeyboardButton(text="Нет", callback_data="confirm_no")
+    markup = InlineKeyboardMarkup(inline_keyboard=[[yes_button, no_button]])
+    await message.answer(text=await send_user_info(state), reply_markup=markup)
+    #await state.clear()
 
 
 @router.message(TeamInfo.phone_number)
@@ -122,24 +125,35 @@ async def handle_invalid_phone_number(message: types.Message):
     await message.answer(text="Введите корректный номер телефона")
 
 
-async def send_user_info(state: FSMContext, message: types.Message) -> str:
+@router.callback_query(F.data == "confirm_yes")
+async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
+    # Получаем данные из state
     data = await state.get_data()
-    await send_user_info(state, message)
     date = data.get("selected_date")
     team_name = data.get("team_name")
     team_size = data.get("team_size")
     leader_name = data.get("leader_name")
     phone_number = data.get("phone_number")
-    # new_row = ["ID", team_name, team_size, leader_name, phone_number]
-    # worksheet2 = sheet.worksheet(date)
-    # worksheet2.append_row(new_row)
+    new_row = ["ID", team_name, team_size, leader_name, phone_number]
+    worksheet2 = sheet.worksheet(date)
+    worksheet2.append_row(new_row)
+    await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
+    await state.clear()
 
-    yes_button = KeyboardButton(text="Да")
-    no_button = KeyboardButton(text="Нет")
-    markup = ReplyKeyboardMarkup(
-        keyboard=[[yes_button], [no_button]],
-        resize_keyboard=True
-    )
+
+@router.callback_query(F.data == "confirm_no")
+async def handle_confirm_no(call: CallbackQuery):
+    await call.message.edit_text(f"""Пожалуйста, начните регистрацию заново.
+Выберите подохдящую дату: """, reply_markup=reg_button())
+
+
+async def send_user_info(state: FSMContext) -> str:
+    data = await state.get_data()
+    date = data.get("selected_date")
+    team_name = data.get("team_name")
+    team_size = data.get("team_size")
+    leader_name = data.get("leader_name")
+    phone_number = data.get("phone_number")
 
     text = f"""Проверьте информацию:
 Дата участия: {date}
@@ -148,4 +162,4 @@ async def send_user_info(state: FSMContext, message: types.Message) -> str:
 Капитан команды: {leader_name}
 Ваш контактный номер: {phone_number}
 Информация верна?"""
-    await message.answer(text, reply_markup=markup)
+    return text
