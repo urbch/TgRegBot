@@ -127,6 +127,7 @@ async def handle_invalid_phone_number(message: types.Message):
 
 @router.callback_query(F.data == "confirm_yes")
 async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
+    user_id = call.from_user.id
     # Получаем данные из state
     data = await state.get_data()
     date = data.get("selected_date")
@@ -134,7 +135,7 @@ async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
     team_size = data.get("team_size")
     leader_name = data.get("leader_name")
     phone_number = data.get("phone_number")
-    new_row = ["ID", team_name, team_size, leader_name, phone_number]
+    new_row = [user_id, team_name, team_size, leader_name, phone_number]
     worksheet2 = sheet.worksheet(date)
     worksheet2.append_row(new_row)
     await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
@@ -163,3 +164,17 @@ async def send_user_info(state: FSMContext) -> str:
 Ваш контактный номер: {phone_number}
 Информация верна?"""
     return text
+
+
+def check_button(user_id):
+    for sheet_name in [data[0].get("Date"), data[1].get("Date"), data[2].get("Date")]:
+        worksheet3 = sheet.worksheet(sheet_name)
+        cell = worksheet3.find(str(user_id))
+        if cell:
+            return True
+    return False
+
+
+
+
+

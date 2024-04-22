@@ -1,10 +1,10 @@
 from aiogram import Router, F
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 from aiogram.utils import markdown
 
-from Routers.Commands.reg_handler import reg_button
+from Routers.Commands.reg_handler import reg_button, check_button
 from keyboards.start_keyboard import ButtonText, get_on_start_kb
 
 router = Router(name=__name__)
@@ -34,7 +34,25 @@ async def handle_reg_button(message: Message):
 
 @router.message(F.text == ButtonText.CHECK)
 async def handle_check_button(message: Message):
-    await message.answer(text="Вы еще не зарегистрированы ни на одну игру")
+    user_id = message.from_user.id
+    yes_button = InlineKeyboardButton(text="Да", callback_data="yes")
+    no_button = InlineKeyboardButton(text="Нет", callback_data="no")
+    markup = InlineKeyboardMarkup(inline_keyboard=[[yes_button, no_button]])
+    if check_button(user_id):
+        await message.answer(text="Вы уже зарегистрированы на игру. Хотите зарегистрироваться еще раз?", reply_markup=markup)
+    else:
+        await message.answer(text="Вы еще не зарегистрированы на игру. Хотите зарегистрироваться?", reply_markup=markup)
+
+
+@router.callback_query(F.data == "yes")
+async def handle_confirm_yes(call: CallbackQuery):
+    await call.message.edit_text(text="Выберите подходящую дату: ", reply_markup=reg_button())
+
+
+@router.callback_query(F.data == "no")
+async def handle_confirm_no(call: CallbackQuery):
+    await call.message.edit_text("Спасибо!", reply_markup=None)
+
 
 @router.message(F.text == ButtonText.SUPPORT)
 @router.message(Command("support", prefix="!/"))
