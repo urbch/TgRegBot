@@ -2,9 +2,13 @@ from aiogram import Router, F, types
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils import markdown
 from validators.phone_number_validator import validate_phone_number
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import os
+
 
 router = Router(name=__name__)
 
@@ -18,10 +22,28 @@ class TeamInfo(StatesGroup):
     report = State()
 
 
+KEY_FILE_LOCATION = 'tg-bot-421112-4814e071cafa.json'
+SHEET_ID="12rKgsq0zUmgP2lykXcpry9KuUmmTzj18qRGYE_pjdbM"
+
+# Аутентификация с помощью API ключа
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, scope)
+gc = gspread.authorize(creds)
+
+# Открываем таблицу
+sheet = gc.open_by_key(SHEET_ID)
+
+# Выбираем нужный лист (по умолчанию первый)
+worksheet = sheet.sheet1
+
+# Пример: чтение данных из таблицы
+data = worksheet.get_all_records()
+
+
 def reg_button():
-    date1 = InlineKeyboardButton(text="02.02.24", callback_data="date02.02.24")
-    date2 = InlineKeyboardButton(text="03.03.24", callback_data="date03.03.24")
-    date3 = InlineKeyboardButton(text="04.04.24", callback_data="date04.04.24")
+    date1 = InlineKeyboardButton(text=data[0].get("Date"), callback_data=f"date{data[0].get("Date")}")
+    date2 = InlineKeyboardButton(text=data[1].get("Date"), callback_data=f"date{data[1].get("Date")}")
+    date3 = InlineKeyboardButton(text=data[2].get("Date"), callback_data=f"date{data[2].get("Date")}")
     row1 = [date1]
     row2 = [date2]
     row3 = [date3]
@@ -100,18 +122,30 @@ async def handle_invalid_phone_number(message: types.Message):
     await message.answer(text="Введите корректный номер телефона")
 
 
-async def send_user_info(state: FSMContext) -> str:
+async def send_user_info(state: FSMContext, message: types.Message) -> str:
     data = await state.get_data()
+    await send_user_info(state, message)
     date = data.get("selected_date")
     team_name = data.get("team_name")
     team_size = data.get("team_size")
     leader_name = data.get("leader_name")
     phone_number = data.get("phone_number")
+    # new_row = ["ID", team_name, team_size, leader_name, phone_number]
+    # worksheet2 = sheet.worksheet(date)
+    # worksheet2.append_row(new_row)
+
+    yes_button = KeyboardButton(text="Да")
+    no_button = KeyboardButton(text="Нет")
+    markup = ReplyKeyboardMarkup(
+        keyboard=[[yes_button], [no_button]],
+        resize_keyboard=True
+    )
+
     text = f"""Проверьте информацию:
 Дата участия: {date}
 Название команды: {team_name}
 Количество участников: {team_size}
 Капитан команды: {leader_name}
 Ваш контактный номер: {phone_number}
-Пожалуйста скажите что вы не ошиблись с вводом"""
-    return text
+Информация верна?"""
+    await message.answer(text, reply_markup=markup)
