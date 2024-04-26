@@ -27,10 +27,14 @@ async def process_help(message: Message):
 
 @router.message(F.text == ButtonText.REG)
 async def handle_reg_button(message: Message):
-    await message.answer(
-        text="Выберите подохдящую дату: ",
-        reply_markup=reg_button()
-    )
+    if reg_button() != False:
+        await message.answer(
+            text="Выберите подохдящую дату: ",
+            reply_markup=reg_button()
+        )
+    else:
+        await message.answer(text="К сожалению, нет доступных дат для регистрации.")
+
 
 @router.message(F.text == ButtonText.CHECK)
 async def handle_check_button(message: Message):
@@ -46,7 +50,13 @@ async def handle_check_button(message: Message):
 
 @router.callback_query(F.data == "yes")
 async def handle_confirm_yes(call: CallbackQuery):
-    await call.message.edit_text(text="Выберите подходящую дату: ", reply_markup=reg_button())
+    if reg_button() != False:
+        await call.message.edit_text(
+            text="Выберите подохдящую дату: ",
+            reply_markup=reg_button()
+        )
+    else:
+        await call.message.edit_text(text="К сожалению, нет доступных дат для регистрации.")
 
 
 @router.callback_query(F.data == "no")

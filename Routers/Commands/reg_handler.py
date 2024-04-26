@@ -30,26 +30,25 @@ scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/au
 creds = ServiceAccountCredentials.from_json_keyfile_name(KEY_FILE_LOCATION, scope)
 gc = gspread.authorize(creds)
 
+max_team_size = 10
+
 # Открываем таблицу
 sheet = gc.open_by_key(SHEET_ID)
-
-# Выбираем нужный лист (по умолчанию первый)
 worksheet = sheet.sheet1
-
-# Пример: чтение данных из таблицы
-data = worksheet.get_all_records()
 
 
 def reg_button():
-    date1 = InlineKeyboardButton(text=data[0].get("Date"), callback_data=f"date{data[0].get("Date")}")
-    date2 = InlineKeyboardButton(text=data[1].get("Date"), callback_data=f"date{data[1].get("Date")}")
-    date3 = InlineKeyboardButton(text=data[2].get("Date"), callback_data=f"date{data[2].get("Date")}")
-    row1 = [date1]
-    row2 = [date2]
-    row3 = [date3]
-    rows = [row1, row2, row3]
-    markup = InlineKeyboardMarkup(inline_keyboard=rows)
-    return markup
+    dates_data = worksheet.get_all_records()
+    available_dates = [row["Date"] for row in dates_data if row.get("DateInfo", "").lower() != "full"]
+    buttons = []
+    for date in available_dates:
+        button = InlineKeyboardButton(text=date, callback_data=f"date{date}")
+        buttons.append([button])
+    if not available_dates:
+        return False
+    else:
+        markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+        return markup
 
 
 @router.callback_query(lambda call: call.data.startswith("date"))
@@ -81,7 +80,7 @@ async def handle_team_name_invalid_type(message: types.Message):
 @router.message(TeamInfo.team_size, F.text.isdigit())
 async def handle_team_size(message: types.Message, state: FSMContext):
     number = int(message.text)
-    if number <= 10 and number > 0:
+    if number <= max_team_size and number > 0:
         await state.update_data(team_size=message.text)
         #await message.answer(text=f"Число участников: {message.text}")
         await state.set_state(TeamInfo.leader_name)
@@ -128,6 +127,9 @@ async def handle_invalid_phone_number(message: types.Message):
 @router.callback_query(F.data == "confirm_yes")
 async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
     user_id = call.from_user.id
+    user_name = call.from_user.username
+    if not user_name:
+        user_name = "NO USERNAME"
     # Получаем данные из state
     data = await state.get_data()
     date = data.get("selected_date")
@@ -135,9 +137,12 @@ async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
     team_size = data.get("team_size")
     leader_name = data.get("leader_name")
     phone_number = data.get("phone_number")
-    new_row = [user_id, team_name, team_size, leader_name, phone_number]
+    new_row = [user_id, user_name, team_name, team_size, leader_name, phone_number]
     worksheet2 = sheet.worksheet(date)
     worksheet2.append_row(new_row)
+    if len(worksheet2.get_all_records()) == max_team_size:
+        date_cell = worksheet.find(date)
+        worksheet.update_cell(date_cell.row, 2, "full")
     await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
     await state.clear()
 
@@ -167,7 +172,8 @@ async def send_user_info(state: FSMContext) -> str:
 
 
 def check_button(user_id):
-    for sheet_name in [data[0].get("Date"), data[1].get("Date"), data[2].get("Date")]:
+    dates_data = worksheet.get_all_records()
+    for sheet_name in [dates_data[0].get("Date"), dates_data[1].get("Date"), dates_data[2].get("Date")]:
         worksheet3 = sheet.worksheet(sheet_name)
         cell = worksheet3.find(str(user_id))
         if cell:
