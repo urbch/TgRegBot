@@ -159,19 +159,14 @@ async def handle_confirm_no(call: CallbackQuery):
 
 
 async def send_user_info(state: FSMContext) -> str:
-    data = await state.get_data()
-    date = data.get("selected_date")
-    team_name = data.get("team_name")
-    team_size = data.get("team_size")
-    leader_name = data.get("leader_name")
-    phone_number = data.get("phone_number")
+    data = await get_data(state)
 
     text = f"""Проверьте информацию:
-Дата участия: {date}
-Название команды: {team_name}
-Количество участников: {team_size}
-Капитан команды: {leader_name}
-Ваш контактный номер: {phone_number}
+Дата участия: {data[0]}
+Название команды: {data[1]}
+Количество участников: {data[2]}
+Капитан команды: {data[3]}
+Ваш контактный номер: {data[4]}
 Информация верна?"""
     return text
 
