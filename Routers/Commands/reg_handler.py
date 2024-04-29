@@ -42,7 +42,8 @@ def reg_button():
     available_dates = [row["Date"] for row in dates_data if row.get("DateInfo", "").lower() != "full"]
     buttons = []
     for date in available_dates:
-        button = InlineKeyboardButton(text=date, callback_data=f"date{date}")
+        time_address = worksheet.cell(worksheet.find(date).row, worksheet.find("Time&Address").col).value
+        button = InlineKeyboardButton(text=date, callback_data=f"date{date}time_address{time_address}")
         buttons.append([button])
     if not available_dates:
         return False
@@ -53,15 +54,29 @@ def reg_button():
 
 @router.callback_query(lambda call: call.data.startswith("date"))
 async def handle_date_callback(call: CallbackQuery, state: FSMContext):
-    selected_date = call.data.split("date")[1]
+    selected_date = call.data.split("date")[1].split("time_address")[0]
+    selected_time = call.data.split("date")[1].split("time_address")[1]
     try:
         ##await call.answer(text=f"Вы выбрали дату: {selected_date}")
-        await call.message.edit_text(text=f"Вы выбрали дату: {selected_date}", reply_markup=None)
+        await call.message.edit_text(text=f"""Вы выбрали дату: {selected_date}
+Время и место проведения: {selected_time}""", reply_markup=None)
+        yes_button = InlineKeyboardButton(text="Да", callback_data="confirm_yes_date")
+        no_button = InlineKeyboardButton(text="Нет", callback_data="confirm_no_date")
+        markup = InlineKeyboardMarkup(inline_keyboard=[[yes_button, no_button]])
+        await call.message.answer(text="Вы уверены, что хотите записаться на эту дату? ", reply_markup=markup)
         await state.update_data(selected_date=selected_date)
-        await state.set_state(TeamInfo.team_name)
-        await call.message.answer(text="Введите название вашей команды:")
     except Exception as e:
         await call.answer(text="Ошибка обработки даты")
+
+@router.callback_query(F.data == "confirm_yes_date")
+async def handle_confirm_yes_date(call: CallbackQuery, state: FSMContext):
+    await state.set_state(TeamInfo.team_name)
+    await call.message.edit_text(text="Введите название вашей команды:")
+
+
+@router.callback_query(F.data == "confirm_no_date")
+async def handle_confirm_no_date(call: CallbackQuery, state: FSMContext):
+    await call.message.edit_text(text="Выберите подходящую дату: ", reply_markup=reg_button())
 
 
 @router.message(TeamInfo.team_name, F.text)
@@ -160,7 +175,6 @@ async def handle_confirm_no(call: CallbackQuery):
 
 async def send_user_info(state: FSMContext) -> str:
     data = await get_data(state)
-
     text = f"""Проверьте информацию:
 Дата участия: {data[0]}
 Название команды: {data[1]}
