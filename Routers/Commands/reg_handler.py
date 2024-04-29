@@ -131,20 +131,25 @@ async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
     if not user_name:
         user_name = "NO USERNAME"
     # Получаем данные из state
+    data = await get_data(state)
+    new_row = [user_id, user_name, data[1], data[2], data[3], data[4]]
+    worksheet2 = sheet.worksheet(data[0])
+    worksheet2.append_row(new_row)
+    if len(worksheet2.get_all_records()) == max_team_size:
+        date_cell = worksheet.find(data[0])
+        worksheet.update_cell(date_cell.row, 2, "full")
+    await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
+    await state.clear()
+
+async def get_data(state: FSMContext):
     data = await state.get_data()
     date = data.get("selected_date")
     team_name = data.get("team_name")
     team_size = data.get("team_size")
     leader_name = data.get("leader_name")
     phone_number = data.get("phone_number")
-    new_row = [user_id, user_name, team_name, team_size, leader_name, phone_number]
-    worksheet2 = sheet.worksheet(date)
-    worksheet2.append_row(new_row)
-    if len(worksheet2.get_all_records()) == max_team_size:
-        date_cell = worksheet.find(date)
-        worksheet.update_cell(date_cell.row, 2, "full")
-    await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
-    await state.clear()
+    data_array = [date, team_name, team_size, leader_name, phone_number]
+    return data_array
 
 
 @router.callback_query(F.data == "confirm_no")
