@@ -25,6 +25,7 @@ async def process_help(message: Message):
 
 @router.message(F.text == ButtonText.REG)
 async def handle_reg_button(message: Message):
+    await message.answer(text="Проверяю доступные даты...")
     if reg_button() != False:
         await message.answer(
             text="Выберите подохдящую дату: ",

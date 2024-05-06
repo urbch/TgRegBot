@@ -36,6 +36,7 @@ max_team_size = 10
 sheet = gc.open_by_key(SHEET_ID)
 worksheet = sheet.sheet1
 
+#@router.message(F.text=="Зарегистрироваться на игру")
 
 def reg_button():
     dates_data = worksheet.get_all_records()
