@@ -1,8 +1,6 @@
 from aiogram import Router, F
-from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from aiogram.utils import markdown
 
 from Routers.Commands.reg_handler import reg_button, check_button
 from keyboards.start_keyboard import ButtonText, get_on_start_kb
@@ -67,4 +65,4 @@ async def handle_confirm_no(call: CallbackQuery):
 @router.message(F.text == ButtonText.SUPPORT)
 @router.message(Command("support", prefix="!/"))
 async def handle_support(message: Message):
-    await message.answer(text="Вы можете связаться с техподдержкой по номеру: 89116546555")
+    await message.answer(text="Вы можете связаться с техподдержкой по номеру: ")

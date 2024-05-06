@@ -193,8 +193,3 @@ def check_button(user_id):
         if cell:
             return True
     return False
-
-
-
-
-
