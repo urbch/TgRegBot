@@ -154,6 +154,7 @@ async def handle_invalid_phone_number(message: types.Message):
 
 @router.callback_query(F.data == "confirm_yes")
 async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
+    await call.message.edit_text(text="Минуточку плюс секундочку...")
     user_id = call.from_user.id
     user_name = call.from_user.username
     if not user_name:
@@ -168,6 +169,7 @@ async def handle_confirm_yes(call: CallbackQuery, state: FSMContext):
         worksheet.update_cell(date_cell.row, 2, "full")
     await call.message.edit_text("Ваша заявка принята!", reply_markup=None)
     await state.clear()
+
 
 async def get_data(state: FSMContext):
     data = await state.get_data()
