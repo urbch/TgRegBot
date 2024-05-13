@@ -36,11 +36,22 @@ max_team_size = 10
 sheet = gc.open_by_key(SHEET_ID)
 worksheet = sheet.sheet1
 
-#@router.message(F.text=="Зарегистрироваться на игру")
 
-def reg_button():
+def reg_button(user_id):
     dates_data = worksheet.get_all_records()
-    available_dates = [row["Date"] for row in dates_data if row.get("DateInfo", "").lower() != "full"]
+    registered_dates = []
+    dates = [row["Date"] for row in dates_data]
+    for sheet_name in sheet.worksheets():  # Проверяем каждую страницу
+        if sheet_name.title in dates:  # Проверяем, что страница соответствует дате
+            worksheet2 = sheet.worksheet(sheet_name.title)
+            cell = worksheet2.find(str(user_id))  # Ищем ID пользователя
+            if cell:
+                registered_dates.append(sheet_name.title)  # Добавляем дату, если ID найден
+    available_dates = [
+        row["Date"]
+        for row in dates_data
+        if row.get("DateInfo", "").lower() != "full" and row["Date"] not in registered_dates
+    ]
     buttons = []
     for date in available_dates:
         time_address = worksheet.cell(worksheet.find(date).row, worksheet.find("Time&Address").col).value
@@ -77,7 +88,8 @@ async def handle_confirm_yes_date(call: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "confirm_no_date")
 async def handle_confirm_no_date(call: CallbackQuery, state: FSMContext):
-    await call.message.edit_text(text="Выберите подходящую дату: ", reply_markup=reg_button())
+    user_id = call.from_user.id
+    await call.message.edit_text(text="Выберите подходящую дату: ", reply_markup=reg_button(user_id))
 
 
 @router.message(TeamInfo.team_name, F.text)
@@ -96,7 +108,7 @@ async def handle_team_name_invalid_type(message: types.Message):
 @router.message(TeamInfo.team_size, F.text.isdigit())
 async def handle_team_size(message: types.Message, state: FSMContext):
     number = int(message.text)
-    if number <= max_team_size and number > 0:
+    if number <= max_team_size and number > 1:
         await state.update_data(team_size=message.text)
         #await message.answer(text=f"Число участников: {message.text}")
         await state.set_state(TeamInfo.leader_name)
@@ -170,8 +182,9 @@ async def get_data(state: FSMContext):
 
 @router.callback_query(F.data == "confirm_no")
 async def handle_confirm_no(call: CallbackQuery):
+    user_id = call.from_user.id
     await call.message.edit_text(f"""Пожалуйста, начните регистрацию заново.
-Выберите подохдящую дату: """, reply_markup=reg_button())
+Выберите подохдящую дату: """, reply_markup=reg_button(user_id))
 
 
 async def send_user_info(state: FSMContext) -> str:
@@ -188,9 +201,37 @@ async def send_user_info(state: FSMContext) -> str:
 
 def check_button(user_id):
     dates_data = worksheet.get_all_records()
-    for sheet_name in [dates_data[0].get("Date"), dates_data[1].get("Date"), dates_data[2].get("Date")]:
-        worksheet3 = sheet.worksheet(sheet_name)
-        cell = worksheet3.find(str(user_id))
-        if cell:
-            return True
+    dates = [row["Date"] for row in dates_data]
+    for sheet_name in sheet.worksheets():  # Проверяем каждую страницу
+        if sheet_name.title in dates:  # Проверяем, что страница соответствует дате
+            worksheet2 = sheet.worksheet(sheet_name.title)
+            cell = worksheet2.find(str(user_id))  # Ищем ID пользователя
+            if cell:
+                return True
     return False
+
+
+def delete_row_and_shift_up(worksheet_name, row_index):
+    """Удаляет строку из Google Таблицы и сдвигает остальные строки вверх."""
+    # Получаем количество строк в таблице
+    num_rows = len(worksheet_name.get_all_values())
+
+    # Проверяем, существует ли строка с указанным индексом
+    if 1 <= row_index <= num_rows:
+        # Удаляем строку
+        worksheet_name.delete_rows(row_index)
+    else:
+        print(f"Ошибка: Индекс строки {row_index} вне диапазона.")
+
+
+def get_sheet_and_row_by_user_id(user_id):
+    """Находит лист и номер строки, где находится указанный ID пользователя."""
+    registred_woksheets = []
+    rows_to_delete = []
+    for sheet_name in sheet.worksheets():  # Проверяем каждую страницу
+        worksheet4 = sheet.worksheet(sheet_name.title)
+        cell = worksheet4.find(str(user_id))  # Ищем ID пользователя
+        if cell:
+            registred_woksheets.append(worksheet4)
+            rows_to_delete.append(cell.row)
+    return registred_woksheets, rows_to_delete  # Если ID не найден, возвращаем None, None
