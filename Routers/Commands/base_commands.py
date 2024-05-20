@@ -40,9 +40,9 @@ async def handle_reg_button(message: Message):
             await message.answer(text="К сожалению, нет доступных дат для регистрации.")
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 429:
-            #wait_time = 60
+            wait_time = 60
             await message.answer(text=f"Превышен лимит запросов. Повторите через минуту...")
-            #time.sleep(wait_time)
+            time.sleep(wait_time)
 
 
 @router.message(F.text == ButtonText.CHECK)
@@ -59,9 +59,9 @@ async def handle_check_button(message: Message):
             await message.answer(text="Вы еще не зарегистрированы на игру.")
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 429:
-            #wait_time = 60
+            wait_time = 60
             await message.answer(text=f"Превышен лимит запросов. Повторите через минуту...")
-            #time.sleep(wait_time)
+            time.sleep(wait_time)
 
 
 @router.callback_query(F.data == "yes")
@@ -81,9 +81,9 @@ async def handle_confirm_yes(call: CallbackQuery):
                                      reply_markup=markup)
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 429:
-            #wait_time = 65
+            wait_time = 60
             await call.message.answer(text=f"Превышен лимит запросов. Повторите через минуту...")
-            #time.sleep(wait_time)
+            time.sleep(wait_time)
 
 
 @router.callback_query(lambda call: call.data.startswith("delete"))
@@ -97,9 +97,9 @@ async def handle_date_callback(call: CallbackQuery):
         await call.message.edit_text(text="Ваша регистрация успешно удалена!")
     except gspread.exceptions.APIError as e:
         if e.response.status_code == 429:
-            #wait_time = 60
+            wait_time = 60
             await call.message.answer(text=f"Превышен лимит запросов. Повторите через минуту...")
-            #time.sleep(wait_time)
+            time.sleep(wait_time)
 
 
 @router.callback_query(F.data == "no")
